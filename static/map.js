@@ -8,23 +8,45 @@ fetch("/locations")
     .then(res => res.json())
     .then(locations => {
         locations.forEach(loc => {
-            // Použij reálné souřadnice
             const marker = L.marker([loc.lat, loc.lng]).addTo(map).bindPopup(`Načítám data pro ${loc.name}...`);
 
             marker.on('click', () => {
-                fetch(`/data/${loc.id}`)
+                fetch(`/city_stats/${loc.id}`)
                     .then(res => res.json())
                     .then(data => {
-                        if (data.length === 0) {
-                            marker.setPopupContent(`<strong>${loc.name}</strong><br>Žádná data o krádežích.`);
-                        } else {
-                            let content = `<strong>${loc.name}</strong><br><ul class="popup-list">`;
-                            data.forEach(row => {
-                                content += `<li>${row.znacka}: ${row.pocet}×</li>`;
+                        const imageUrl = data.image_url || ""; // Ošetření, pokud obrázek není dostupný
+                        let content = `
+                            <strong style="font-size: 1.5em; font-weight: bold;">${loc.name}</strong><br>
+                            <img src="${imageUrl}" alt="Fotografie ${loc.name}" width="200" /><br>
+                            <h4>Statistiky:</h4>
+                            <p><strong>Průměrný rok modelu: </strong>${data.avg_model_year || "Nedostatek dat"}</p>
+                            <p><strong>Populace: </strong>${data.population || "Nedostatek dat"}</p>
+                            <h5>5 Nejvíce kradených vozidel:</h5>
+                            <ul class="popup-list">`;
+
+                        if (data.vehicles && data.vehicles.length > 0) {
+                            data.vehicles.forEach(vehicle => {
+                                content += `<li>${vehicle.vehicle_name} - ${vehicle.make_name} (${vehicle.vehicle_type}) - ${vehicle.count}×</li>`;
                             });
-                            content += '</ul>';
-                            marker.setPopupContent(content).openPopup();
+                        } else {
+                            content += "<li>Nedostatek dat</li>";
                         }
+
+                        content += `</ul>
+                            <h5>Nejvíce kradené barvy:</h5>
+                            <ul class="popup-list">`;
+
+                        if (data.colors && data.colors.length > 0) {
+                            data.colors.forEach(color => {
+                                content += `<li>${color.color} - ${color.count}×</li>`;
+                            });
+                        } else {
+                            content += "<li>Nedostatek dat</li>";
+                        }
+
+                        content += `</ul>`;
+
+                        marker.setPopupContent(content).openPopup();
                     })
                     .catch(err => {
                         marker.setPopupContent("Chyba při načítání dat.");
@@ -32,7 +54,4 @@ fetch("/locations")
                     });
             });
         });
-    })
-    .catch(err => {
-        console.error("Chyba při načítání lokací:", err);
     });
