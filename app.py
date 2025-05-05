@@ -77,10 +77,5 @@ def get_top_vehicles(region_id):
     conn.close()
     return jsonify(result)
 
-
-    except Exception as e:
-        print(f"❌ Chyba při získávání dat pro location_id={location_id}: {e}")
-        return jsonify({"error": "Data se nepodařilo načíst"}), 500
-
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
