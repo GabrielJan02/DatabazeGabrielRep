@@ -43,17 +43,45 @@ def index():
 def get_locations():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT location_id, region
-        FROM location_id
-    """)
+
+    # Seznam ID a souřadnic, můžeš je později přesunout do tabulky v DB
+    coordinates = {
+        101: (-35.4136, 173.9321),
+        102: (-36.8485, 174.7633),
+        103: (-37.6191, 175.0233),
+        104: (-37.4234, 176.7416),
+        105: (-38.6533, 178.0042),
+        106: (-39.6017, 176.5804),
+        107: (-39.3538, 174.4383),
+        108: (-39.7273, 175.4376),
+        109: (-41.2865, 174.7762),
+        110: (-41.4571, 172.8210),
+        111: (-41.2706, 173.2840),
+        112: (-41.5917, 173.7624),
+        113: (-42.4064, 171.6912),
+        114: (-43.7542, 171.1637),
+        115: (-45.4791, 170.1548),
+        116: (-45.8489, 167.6755),
+        117: (-45.0000, 170.0000),
+    }
+
+    cursor.execute("SELECT location_id, region FROM location_id")
     rows = cursor.fetchall()
-    result = [
-        {"id": row.location_id, "name": row.region}
-        for row in rows
-    ]
+
+    result = []
+    for row in rows:
+        loc_id = row.location_id
+        lat, lng = coordinates.get(loc_id, (0, 0))  # fallback [0,0] pokud chybí
+        result.append({
+            "id": loc_id,
+            "name": row.region,
+            "lat": lat,
+            "lng": lng
+        })
+
     conn.close()
     return jsonify(result)
+
 
 @app.route('/data/<int:region_id>')
 def get_top_vehicles(region_id):
