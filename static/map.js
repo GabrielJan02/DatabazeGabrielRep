@@ -1,4 +1,32 @@
-const map = L.map('map').setView([-41.28, 174.77], 5); // Nový Zéland – výchozí
+const map = L.map('map', {
+    center: [-41.28, 174.77], // Nový Zéland – výchozí pozice
+    zoom: 5,                  // Počáteční úroveň zoomu
+    minZoom: 5                // Minimální úroveň zoomu (není možné odzoomovat pod tuto hodnotu)
+});
+
+// Původní hranice (jihozápadní a severovýchodní roh)
+const southWest = L.latLng(-45.0, 167.0); // Jihozápadní roh mapy
+const northEast = L.latLng(-35.0, 178.0); // Severovýchodní roh mapy
+
+// Spočítání šířky a výšky oblasti (rozdíl mezi souřadnicemi)
+const latDiff = northEast.lat - southWest.lat;
+const lngDiff = northEast.lng - southWest.lng;
+
+// Rozšíření hranic o 50 %
+const expandedSouthWest = L.latLng(
+    southWest.lat - latDiff * 0.25, // Posunutí o 25% na jih
+    southWest.lng - lngDiff * 0.25  // Posunutí o 25% na západ
+);
+
+const expandedNorthEast = L.latLng(
+    northEast.lat + latDiff * 0.25,  // Posunutí o 25% na sever
+    northEast.lng + lngDiff * 0.25   // Posunutí o 25% na východ
+);
+
+// Vytvoření nových ohraničení mapy s rozšířením
+const bounds = L.latLngBounds(expandedSouthWest, expandedNorthEast);
+
+map.setMaxBounds(bounds);  // Omezí pohyb mapy na rozšířenou oblast
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -14,10 +42,8 @@ fetch("/locations")
                 fetch(`/city_stats/${loc.id}`)
                     .then(res => res.json())
                     .then(data => {
-                        const imageUrl = data.image_url || ""; // Ošetření, pokud obrázek není dostupný
                         let content = `
                             <strong style="font-size: 1.5em; font-weight: bold;">${loc.name}</strong><br>
-                            <img src="${imageUrl}" alt="Fotografie ${loc.name}" width="200" /><br>
                             <h4>Statistiky:</h4>
                             <p><strong>Průměrný rok modelu: </strong>${data.avg_model_year || "Nedostatek dat"}</p>
                             <p><strong>Populace: </strong>${data.population || "Nedostatek dat"}</p>
