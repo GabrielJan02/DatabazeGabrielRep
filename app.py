@@ -5,6 +5,23 @@ from config import DB_CONFIG
 
 app = Flask(__name__)
 
+@app.route("/test-db")
+def test_db_connection():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT TOP 1 * FROM Vozidla")  # Změň podle své tabulky
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return jsonify({"status": "success", "sample_row": str(row)})
+        else:
+            return jsonify({"status": "success", "message": "No data found."})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)})
+
+
 def get_connection():
     conn_str = (
         f"Driver={{{DB_CONFIG['driver']}}};"
