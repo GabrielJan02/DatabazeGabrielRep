@@ -39,6 +39,22 @@ def get_connection():
 def index():
     return render_template("index.html")
 
+@app.route('/locations')
+def get_locations():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT location_id, region
+        FROM location_id
+    """)
+    rows = cursor.fetchall()
+    result = [
+        {"id": row.location_id, "name": row.region}
+        for row in rows
+    ]
+    conn.close()
+    return jsonify(result)
+
 @app.route('/data/<int:region_id>')
 def get_top_vehicles(region_id):
     conn = get_connection()
