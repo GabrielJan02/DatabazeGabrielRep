@@ -4,6 +4,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
 }).addTo(map);
 
+// Lokace podle ID regionu z databáze
 const locations = [
     { id: 1, name: "Auckland", lat: -36.8485, lng: 174.7633 },
     { id: 2, name: "Wellington", lat: -41.2865, lng: 174.7762 },
@@ -11,13 +12,11 @@ const locations = [
 ];
 
 locations.forEach(region => {
-    const marker = L.marker([region.lat, region.lng])
-        .addTo(map)
-        .bindPopup(`Načítám data pro ${region.name}...`);
+    const marker = L.marker([region.lat, region.lng]).addTo(map).bindPopup(`Načítám data pro ${region.name}...`);
 
     marker.on('click', () => {
         fetch(`/data/${region.id}`)
-            .then((response) => response.json())
+            .then((res) => res.json())
             .then((data) => {
                 if (data.error) {
                     marker.setPopupContent(`<strong>${region.name}</strong><br>Chyba: ${data.error}`).openPopup();
@@ -26,7 +25,7 @@ locations.forEach(region => {
                 } else {
                     let content = `<strong>${region.name}</strong><br><ul>`;
                     data.forEach((item) => {
-                        content += `<li>${item.make} (${item.type}): ${item.count}×</li>`;
+                        content += `<li>${item.make}: ${item.count} krádeží</li>`;
                     });
                     content += `</ul>`;
                     marker.setPopupContent(content).openPopup();
