@@ -22,6 +22,74 @@ def test_db_connection():
         return jsonify({"status": "error", "error": str(e)})
 
 
+@app.route('/city_stats/<int:location_id>')
+def get_city_stats(location_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Získání základních statistických údajů pro město
+    cursor.execute("""
+        SELECT
+            l.population,
+            AVG(c.model_year) AS avg_model_year
+        FROM CarsStolenNZ c
+        JOIN location_id l ON c.location_id = l.location_id
+        WHERE c.location_id = ?
+        GROUP BY l.population
+    """, (location_id,))
+
+    city_data = cursor.fetchone()
+
+    if not city_data:
+        return jsonify({
+            "avg_model_year": None,
+            "population": None,
+            "vehicles": [],
+            "colors": [],
+            "image_url": ""
+        })
+
+    avg_model_year = city_data[1]
+    population = city_data[0]
+
+    # Získání top 5 nejvíce kradených vozidel
+    cursor.execute("""
+        SELECT TOP 5
+            c.vehicle_desc AS vehicle_name,
+            m.make_name,
+            c.vehicle_type,
+            COUNT(*) AS vehicle_count
+        FROM CarsStolenNZ c
+        JOIN make_ID m ON c.make_id = m.make_id
+        WHERE c.location_id = ?
+        GROUP BY c.vehicle_desc, m.make_name, c.vehicle_type
+        ORDER BY vehicle_count DESC
+    """, (location_id,))
+
+    vehicles = cursor.fetchall()
+
+    # Získání top 5 nejvíce kradených barev
+    cursor.execute("""
+        SELECT TOP 5
+            c.color,
+            COUNT(*) AS color_count
+        FROM CarsStolenNZ c
+        WHERE c.location_id = ?
+        GROUP BY c.color
+        ORDER BY color_count DESC
+    """, (location_id,))
+
+    colors = cursor.fetchall()
+
+    return jsonify({
+        "avg_model_year": avg_model_year,
+        "population": population,
+        "vehicles": [{"vehicle_name": row[0], "make_name": row[1], "vehicle_type": row[2], "count": row[3]} for row in vehicles],
+        "colors": [{"color": row[0], "count": row[1]} for row in colors],
+        "image_url": f"https://www.example.com/images/{location_id}.jpg"
+    })
+
+
 def get_connection():
     conn_str = (
         f"Driver={{{DB_CONFIG['driver']}}};"
