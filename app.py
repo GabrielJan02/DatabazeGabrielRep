@@ -39,29 +39,29 @@ def get_connection():
 def index():
     return render_template("index.html")
 
-@app.route('/data/<int:location_id>')
-def get_top_vehicles(location_id):
+@app.route("/data/<int:region_id>")
+def get_top_vehicles(region_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        query = """
-        SELECT TOP 5 M.make_name, C.vehicle_type, COUNT(*) AS count
-        FROM CarsStolenNZ C
-        JOIN make_ID M ON C.make_id = M.make_id
-        WHERE C.location_id = ?
-        GROUP BY M.make_name, C.vehicle_type
-        ORDER BY count DESC;
-        """
-        cursor.execute(query, location_id)
-        results = cursor.fetchall()
+        # Upravený SQL dotaz – přizpůsob tabulce!
+        cursor.execute("""
+            SELECT TOP 5 Znacka, COUNT(*) as Pocet
+            FROM Vozidla
+            WHERE RegionID = ?
+            GROUP BY Znacka
+            ORDER BY Pocet DESC
+        """, region_id)
 
-        data = [
-            {"make": row[0], "type": row[1], "count": row[2]}
-            for row in results
-        ]
+        rows = cursor.fetchall()
         conn.close()
-        return jsonify(data)
+
+        result = [{"znacka": row[0], "pocet": row[1]} for row in rows]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
     except Exception as e:
         print(f"❌ Chyba při získávání dat pro location_id={location_id}: {e}")
