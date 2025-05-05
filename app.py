@@ -39,28 +39,27 @@ def get_connection():
 def index():
     return render_template("index.html")
 
-@app.route("/data/<int:region_id>")
+@app.route('/data/<int:region_id>')
 def get_top_vehicles(region_id):
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT TOP 5 m.make_name, COUNT(*) AS pocet
+        FROM CarsStolenNZ c
+        JOIN location_id l ON c.location_id = l.location_id
+        JOIN make_ID m ON c.make_id = m.make_id
+        WHERE l.location_id = ?
+        GROUP BY m.make_name
+        ORDER BY pocet DESC;
+    """, region_id)
 
-        # Upravený SQL dotaz – přizpůsob tabulce!
-        cursor.execute("""
-            SELECT TOP 5 Znacka, COUNT(*) as Pocet
-            FROM Vozidla
-            WHERE RegionID = ?
-            GROUP BY Znacka
-            ORDER BY Pocet DESC
-        """, region_id)
-
-        rows = cursor.fetchall()
-        conn.close()
-
-        result = [{"znacka": row[0], "pocet": row[1]} for row in rows]
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    rows = cursor.fetchall()
+    result = [
+        {"znacka": row.make_name, "pocet": row.pocet}
+        for row in rows
+    ]
+    conn.close()
+    return jsonify(result)
 
 
     except Exception as e:
