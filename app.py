@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, render_template, jsonify
 import pyodbc
 from config import DB_CONFIG
@@ -45,8 +44,7 @@ def get_city_stats(location_id):
             "avg_model_year": None,
             "population": None,
             "vehicles": [],
-            "colors": [],
-            "image_url": ""
+            "colors": []
         })
 
     avg_model_year = city_data[1]
@@ -85,8 +83,7 @@ def get_city_stats(location_id):
         "avg_model_year": avg_model_year,
         "population": population,
         "vehicles": [{"vehicle_name": row[0], "make_name": row[1], "vehicle_type": row[2], "count": row[3]} for row in vehicles],
-        "colors": [{"color": row[0], "count": row[1]} for row in colors],
-        "image_url": f"https://www.example.com/images/{location_id}.jpg"
+        "colors": [{"color": row[0], "count": row[1]} for row in colors]
     })
 
 
